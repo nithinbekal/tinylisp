@@ -25,16 +25,16 @@ int main(int argc, char** argv) {
   mpc_parser_t* Number   = mpc_new("number");
   mpc_parser_t* Operator = mpc_new("operator");
   mpc_parser_t* Expr     = mpc_new("expr");
-  mpc_parser_t* Lispy    = mpc_new("lispy");
+  mpc_parser_t* Tinylisp = mpc_new("tinylisp");
 
   mpca_lang(MPCA_LANG_DEFAULT,
     "                                                           \
       number   : /-?[0-9]+/ ;                                   \
       operator : '+' | '-' | '*' | '/' ;                        \
       expr     : <number> | '(' <operator> <expr>+ ')' ;        \
-      lispy    : /^/ <operator> <expr>+ /$/ ;                   \
+      tinylisp : /^/ <operator> <expr>+ /$/ ;                   \
     ",
-    Number, Operator, Expr, Lispy);
+    Number, Operator, Expr, Tinylisp);
 
   mpc_result_t r;
 
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     
     if (strcmp(input, "exit") == 0) return 0;
 
-    if (mpc_parse("<stdin>", input, Lispy, &r)) {
+    if (mpc_parse("<stdin>", input, Tinylisp, &r)) {
       tl_val_print(eval(r.output));
       mpc_ast_delete(r.output);
     } else {
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     free(input);
   }
 
-  mpc_cleanup(4, Number, Operator, Expr, Lispy);
+  mpc_cleanup(4, Number, Operator, Expr, Tinylisp);
 
   return 0;
 }
