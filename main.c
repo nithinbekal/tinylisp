@@ -23,18 +23,20 @@ void tl_val_print(TL_VALUE);
 int main(int argc, char** argv) {
 
   mpc_parser_t* Number   = mpc_new("number");
-  mpc_parser_t* Operator = mpc_new("operator");
+  mpc_parser_t* Symbol   = mpc_new("symbol");
+  mpc_parser_t* Sexpr    = mpc_new("sexpr");
   mpc_parser_t* Expr     = mpc_new("expr");
   mpc_parser_t* Tinylisp = mpc_new("tinylisp");
 
   mpca_lang(MPCA_LANG_DEFAULT,
     "                                                           \
       number   : /-?[0-9]+/ ;                                   \
-      operator : '+' | '-' | '*' | '/' ;                        \
-      expr     : <number> | '(' <operator> <expr>+ ')' ;        \
-      tinylisp : /^/ <operator> <expr>+ /$/ ;                   \
+      symbol   : '+' | '-' | '*' | '/' ;                        \
+      sexpr    : '(' <expr>* ')' ;                              \
+      expr     : <number> | '(' <symbol> <expr>+ ')' ;          \
+      tinylisp : /^/ <symbol> <expr>+ /$/ ;                     \
     ",
-    Number, Operator, Expr, Tinylisp);
+    Number, Symbol, Sexpr, Expr, Tinylisp);
 
   mpc_result_t r;
 
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
     free(input);
   }
 
-  mpc_cleanup(4, Number, Operator, Expr, Tinylisp);
+  mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Tinylisp);
 
   return 0;
 }
