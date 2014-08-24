@@ -10,7 +10,7 @@ typedef struct {
   int err;
 } TL_VALUE;
 
-enum { TL_INTEGER, TL_ERROR };
+enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR };
 enum { TLERR_ZERO_DIV, TLERR_BAD_OP, TLERR_BAD_NUM };
 
 TL_VALUE eval(mpc_ast_t*);
