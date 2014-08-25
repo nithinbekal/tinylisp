@@ -4,21 +4,25 @@
 
 #include "mpc.h"
 
-typedef struct {
+typedef struct tl_val {
   int type;
   long num;
-  int err;
+
+  char* err;
+  char* sym;
+
+  int count;
+  struct tl_val** cell;
 } TL_VALUE;
 
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR };
-enum { TLERR_ZERO_DIV, TLERR_BAD_OP, TLERR_BAD_NUM };
 
-TL_VALUE eval(mpc_ast_t*);
-TL_VALUE eval_op(char*, TL_VALUE, TL_VALUE);
+TL_VALUE* eval(mpc_ast_t*);
+TL_VALUE* eval_op(char*, TL_VALUE*, TL_VALUE*);
 
-TL_VALUE tl_val_num(long);
-TL_VALUE tl_val_error(int);
-void tl_val_print(TL_VALUE);
+TL_VALUE* tl_val_num(long);
+TL_VALUE* tl_val_error(char*);
+void tl_val_print(TL_VALUE*);
 
 int main(int argc, char** argv) {
 
@@ -65,15 +69,15 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-TL_VALUE eval(mpc_ast_t* node) {
+TL_VALUE* eval(mpc_ast_t* node) {
   if (strstr(node->tag, "number")) {
     errno = 0;
     long x = strtol(node->contents, NULL, 10);
-    return errno != ERANGE ? tl_val_num(x) : tl_val_error(TLERR_BAD_NUM);
+    return errno != ERANGE ? tl_val_num(x) : tl_val_error("Invalid number");
   }
   
   char* op = node->children[1]->contents;
-  TL_VALUE x = eval(node->children[2]);
+  TL_VALUE* x = eval(node->children[2]);
 
   for (int i=3; strstr(node->children[i]->tag, "expr"); i++) {
     x = eval_op(op, x, eval(node->children[i]));
@@ -82,44 +86,59 @@ TL_VALUE eval(mpc_ast_t* node) {
   return x;
 }
 
-TL_VALUE eval_op(char* op, TL_VALUE x, TL_VALUE y) {
-  if (x.type == TL_ERROR) { return x; }
-  if (y.type == TL_ERROR) { return y; }
+TL_VALUE* eval_op(char* op, TL_VALUE* x, TL_VALUE* y) {
+  if (x->type == TL_ERROR) { return x; }
+  if (y->type == TL_ERROR) { return y; }
 
-  if (strcmp(op, "+") == 0) { return tl_val_num(x.num + y.num); }
-  if (strcmp(op, "-") == 0) { return tl_val_num(x.num - y.num); }
-  if (strcmp(op, "*") == 0) { return tl_val_num(x.num * y.num); }
+  if (strcmp(op, "+") == 0) { return tl_val_num(x->num + y->num); }
+  if (strcmp(op, "-") == 0) { return tl_val_num(x->num - y->num); }
+  if (strcmp(op, "*") == 0) { return tl_val_num(x->num * y->num); }
   if (strcmp(op, "/") == 0) {
-    return y.num == 0 ? tl_val_error(TLERR_ZERO_DIV) : tl_val_num(x.num / y.num);
+    return y->num == 0 ? tl_val_error("Divide by zero") : tl_val_num(x->num / y->num);
   }
 
-  return tl_val_error(TLERR_BAD_OP);
+  return tl_val_error("Invalid operator");
 }
 
-TL_VALUE tl_val_num(long x) {
-  TL_VALUE v;
-  v.type = TL_INTEGER;
-  v.num = x;
+TL_VALUE* tl_val_num(long x) {
+  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+  v->type = TL_INTEGER;
+  v->num = x;
   return v;
 }
 
-TL_VALUE tl_val_error(int x) {
-  TL_VALUE v;
-  v.type = TL_ERROR;
-  v.err = x;
+TL_VALUE* tl_val_error(char* m) {
+  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+  v->type = TL_ERROR;
+  v->err = malloc(strlen(m)+1);
+  strcpy(v->err, m);
   return v;
 }
 
-void tl_val_print(TL_VALUE v) {
-  switch (v.type) {
+TL_VALUE* tl_val_symbol(char* s) {
+  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+  v->type = TL_SYMBOL;
+  v->sym = malloc(strlen(s)+1);
+  strcpy(v->sym, s);
+  return v;
+}
+
+TL_VALUE* tl_val_sexpr(void) {
+  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+  v->type = TL_SEXPR;
+  v->count = 0;
+  v->cell = NULL;
+  return v;
+}
+
+void tl_val_print(TL_VALUE* v) {
+  switch (v->type) {
     case TL_INTEGER:
-      printf("%ld\n", v.num);
+      printf("%ld\n", v->num);
       break;
 
     case TL_ERROR:
-      if (v.err == TLERR_ZERO_DIV)  { printf("Error: Divide by 0.\n"); }
-      if (v.err == TLERR_BAD_OP)    { printf("Error: Invalid operator.\n"); }
-      if (v.err == TLERR_BAD_NUM)   { printf("Error: Invalid number.\n"); }
+      printf("Error: %s.\n", v->err);
       break;
   }
 }
