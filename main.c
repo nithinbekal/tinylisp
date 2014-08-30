@@ -4,7 +4,7 @@
 
 #include "mpc.h"
 
-typedef struct tl_val {
+typedef struct tl_value {
   int type;
   long num;
 
@@ -12,17 +12,17 @@ typedef struct tl_val {
   char* sym;
 
   int count;
-  struct tl_val** cell;
-} TL_VALUE;
+  struct tl_value** cell;
+} *TL_VALUE;
 
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR };
 
-TL_VALUE* eval(mpc_ast_t*);
-TL_VALUE* eval_op(char*, TL_VALUE*, TL_VALUE*);
+TL_VALUE eval(mpc_ast_t*);
+TL_VALUE eval_op(char*, TL_VALUE, TL_VALUE);
 
-TL_VALUE* tl_val_num(long);
-TL_VALUE* tl_val_error(char*);
-void tl_val_print(TL_VALUE*);
+TL_VALUE tl_val_num(long);
+TL_VALUE tl_val_error(char*);
+void tl_val_print(TL_VALUE);
 
 int main(int argc, char** argv) {
 
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-TL_VALUE* eval(mpc_ast_t* node) {
+TL_VALUE eval(mpc_ast_t* node) {
   if (strstr(node->tag, "number")) {
     errno = 0;
     long x = strtol(node->contents, NULL, 10);
@@ -77,7 +77,7 @@ TL_VALUE* eval(mpc_ast_t* node) {
   }
   
   char* op = node->children[1]->contents;
-  TL_VALUE* x = eval(node->children[2]);
+  TL_VALUE x = eval(node->children[2]);
 
   for (int i=3; strstr(node->children[i]->tag, "expr"); i++) {
     x = eval_op(op, x, eval(node->children[i]));
@@ -86,7 +86,7 @@ TL_VALUE* eval(mpc_ast_t* node) {
   return x;
 }
 
-TL_VALUE* eval_op(char* op, TL_VALUE* x, TL_VALUE* y) {
+TL_VALUE eval_op(char* op, TL_VALUE x, TL_VALUE y) {
   if (x->type == TL_ERROR) { return x; }
   if (y->type == TL_ERROR) { return y; }
 
@@ -100,38 +100,38 @@ TL_VALUE* eval_op(char* op, TL_VALUE* x, TL_VALUE* y) {
   return tl_val_error("Invalid operator");
 }
 
-TL_VALUE* tl_val_num(long x) {
-  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+TL_VALUE tl_val_num(long x) {
+  TL_VALUE v = malloc(sizeof(TL_VALUE));
   v->type = TL_INTEGER;
   v->num = x;
   return v;
 }
 
-TL_VALUE* tl_val_error(char* m) {
-  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+TL_VALUE tl_val_error(char* m) {
+  TL_VALUE v = malloc(sizeof(TL_VALUE));
   v->type = TL_ERROR;
   v->err = malloc(strlen(m)+1);
   strcpy(v->err, m);
   return v;
 }
 
-TL_VALUE* tl_val_symbol(char* s) {
-  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+TL_VALUE tl_val_symbol(char* s) {
+  TL_VALUE v = malloc(sizeof(TL_VALUE));
   v->type = TL_SYMBOL;
   v->sym = malloc(strlen(s)+1);
   strcpy(v->sym, s);
   return v;
 }
 
-TL_VALUE* tl_val_sexpr(void) {
-  TL_VALUE* v = malloc(sizeof(TL_VALUE));
+TL_VALUE tl_val_sexpr(void) {
+  TL_VALUE v = malloc(sizeof(TL_VALUE));
   v->type = TL_SEXPR;
   v->count = 0;
   v->cell = NULL;
   return v;
 }
 
-void tl_val_print(TL_VALUE* v) {
+void tl_val_print(TL_VALUE v) {
   switch (v->type) {
     case TL_INTEGER:
       printf("%ld\n", v->num);
@@ -142,3 +142,4 @@ void tl_val_print(TL_VALUE* v) {
       break;
   }
 }
+
