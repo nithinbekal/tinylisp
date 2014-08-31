@@ -22,7 +22,10 @@ TL_VALUE eval_op(char*, TL_VALUE, TL_VALUE);
 
 TL_VALUE tl_val_num(long);
 TL_VALUE tl_val_error(char*);
+TL_VALUE tl_val_read(mpc_ast_t*);
 void tl_val_print(TL_VALUE);
+void tl_val_print_expr(TL_VALUE, char, char);
+void tl_val_delete(TL_VALUE);
 
 int main(int argc, char** argv) {
 
@@ -50,12 +53,13 @@ int main(int argc, char** argv) {
   while(1) {
     char* input = readline("tinylisp> ");
     add_history(input);
-    
+
     if (strcmp(input, "exit") == 0) return 0;
 
     if (mpc_parse("<stdin>", input, Tinylisp, &r)) {
-      tl_val_print(eval(r.output));
-      mpc_ast_delete(r.output);
+      TL_VALUE x = tl_val_read(r.output);
+      tl_val_print(x);
+      tl_val_delete(x);
     } else {
       mpc_err_print(r.error);
       mpc_err_delete(r.error);
@@ -140,6 +144,70 @@ void tl_val_print(TL_VALUE v) {
     case TL_ERROR:
       printf("Error: %s.\n", v->err);
       break;
+
+    case TL_SYMBOL:
+      printf("%s", v->sym);
+      break;
+
+    case TL_SEXPR:
+      tl_val_print_expr(v, '(', ')');
+      break;
   }
+}
+
+void tl_val_delete(TL_VALUE v) {
+  switch(v->type) {
+    case TL_INTEGER: break;
+    case TL_ERROR:   free(v->err); break;
+    case TL_SYMBOL:  free(v->sym); break;
+
+    case TL_SEXPR:
+      for(int i=0; i < v->count; i++) tl_val_delete(v->cell[i]);
+      free(v->cell);
+      break;
+  }
+  free(v);
+}
+
+TL_VALUE tl_val_add(TL_VALUE v, TL_VALUE x) {
+  v->count++;
+  v->cell = realloc(v->cell, sizeof(TL_VALUE) * v->count);
+  v->cell[v->count - 1] = x;
+  return v;
+}
+
+TL_VALUE tl_val_read_integer(mpc_ast_t* t) {
+  errno = 0;
+  long x = strtol(t->contents, NULL, 10);
+  return errno != ERANGE ? tl_val_num(x) : tl_val_error("Invalid number");
+}
+
+TL_VALUE tl_val_read(mpc_ast_t* t) {
+  puts(t->tag);
+  if (strstr(t->tag, "number")) { return tl_val_read_integer(t); }
+  if (strstr(t->tag, "symbol")) { return tl_val_symbol(t->contents); }
+
+  TL_VALUE x = NULL;
+  if (strcmp(t->tag, ">") == 0) { x = tl_val_sexpr();  }
+  if (strstr(t->tag, "sexpr")) { x = tl_val_sexpr(); }
+
+  for(int i = 0; i<t->children_num; i++) {
+    if (strcmp(t->children[i]->contents, "(") == 0) continue;
+    if (strcmp(t->children[i]->contents, ")") == 0) continue;
+    if (strcmp(t->children[i]->contents, "{") == 0) continue;
+    if (strcmp(t->children[i]->contents, "}") == 0) continue;
+
+    x = tl_val_add(x, tl_val_read(t->children[i]));
+  }
+  return x;
+}
+
+void tl_val_print_expr(TL_VALUE v, char open, char close) {
+  putchar(open);
+  for(int i=0; i<v->count; i++) {
+    tl_val_print(v->cell[i]);
+    if (i != (v->count - 1)) putchar(' ');
+  }
+  putchar(close);
 }
 
