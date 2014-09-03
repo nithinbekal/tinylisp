@@ -17,9 +17,6 @@ typedef struct tl_value {
 
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR };
 
-TL_VALUE eval_op(char*, TL_VALUE, TL_VALUE);
-TL_VALUE eval_sexp(TL_VALUE);
-
 TL_VALUE tl_val_num(long);
 TL_VALUE tl_val_error(char*);
 TL_VALUE tl_val_read(mpc_ast_t*);
@@ -79,20 +76,6 @@ int main(int argc, char** argv) {
   mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Tinylisp);
 
   return 0;
-}
-
-TL_VALUE eval_op(char* op, TL_VALUE x, TL_VALUE y) {
-  if (x->type == TL_ERROR) { return x; }
-  if (y->type == TL_ERROR) { return y; }
-
-  if (strcmp(op, "+") == 0) { return tl_val_num(x->num + y->num); }
-  if (strcmp(op, "-") == 0) { return tl_val_num(x->num - y->num); }
-  if (strcmp(op, "*") == 0) { return tl_val_num(x->num * y->num); }
-  if (strcmp(op, "/") == 0) {
-    return y->num == 0 ? tl_val_error("Divide by zero") : tl_val_num(x->num / y->num);
-  }
-
-  return tl_val_error("Invalid operator");
 }
 
 TL_VALUE tl_val_num(long x) {
