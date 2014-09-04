@@ -3,23 +3,10 @@
 #include <editline/readline.h>
 
 #include "mpc.h"
+#include "value.h"
 
 #define TL_ASSERT(args, cond, err) if(!(cond)) { tl_val_delete(args); return tl_val_error(err); }
 
-typedef struct val {
-  int type;
-  long num;
-
-  char* err;
-  char* sym;
-
-  int count;
-  struct val** cell;
-} TLVAL, *VAL;
-
-enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR };
-
-VAL tl_val_num(long);
 VAL tl_val_error(char*);
 VAL tl_val_read(mpc_ast_t*);
 VAL tl_val_pop(VAL, int);
@@ -88,13 +75,6 @@ int main(int argc, char** argv) {
   mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Tinylisp);
 
   return 0;
-}
-
-VAL tl_val_num(long x) {
-  VAL v = malloc(sizeof(TLVAL));
-  v->type = TL_INTEGER;
-  v->num = x;
-  return v;
 }
 
 VAL tl_val_error(char* m) {
