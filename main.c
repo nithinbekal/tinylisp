@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
     if (mpc_parse("<stdin>", input, Tinylisp, &r)) {
       TL_VALUE x = tl_val_eval(tl_val_read(r.output));
       tl_val_print(x);
+      puts("");
       tl_val_delete(x);
 
       mpc_ast_delete(r.output);
@@ -131,11 +132,11 @@ TL_VALUE tl_val_qexpr(void) {
 void tl_val_print(TL_VALUE v) {
   switch (v->type) {
     case TL_INTEGER:
-      printf("%ld\n", v->num);
+      printf("%ld", v->num);
       break;
 
     case TL_ERROR:
-      printf("Error: %s.\n", v->err);
+      printf("Error: %s.", v->err);
       break;
 
     case TL_SYMBOL:
@@ -203,10 +204,12 @@ TL_VALUE tl_val_read(mpc_ast_t* t) {
 
 void tl_val_print_expr(TL_VALUE v, char open, char close) {
   putchar(open);
+  putchar(' ');
   for(int i=0; i<v->count; i++) {
     tl_val_print(v->cell[i]);
     if (i != (v->count - 1)) putchar(' ');
   }
+  putchar(' ');
   putchar(close);
 }
 
@@ -259,7 +262,7 @@ TL_VALUE builtin(TL_VALUE v, char* f) {
   if (strcmp("tail", f) == 0) return builtin_tail(v);
   if (strcmp("join", f) == 0) return builtin_join(v);
   if (strcmp("eval", f) == 0) return builtin_eval(v);
-  if (strstr("+-*/", f) == 0) return builtin_op(v, f);
+  if (strstr("+-*/", f))      return builtin_op(v, f);
 
   tl_val_delete(v);
   return tl_val_error("Unknown function called!");
