@@ -25,14 +25,19 @@ TL_VALUE tl_val_read(mpc_ast_t*);
 TL_VALUE tl_val_pop(TL_VALUE, int);
 TL_VALUE tl_val_take(TL_VALUE, int);
 TL_VALUE tl_val_eval(TL_VALUE);
+TL_VALUE tl_val_join(TL_VALUE, TL_VALUE);
 
 void tl_val_print(TL_VALUE);
 void tl_val_print_expr(TL_VALUE, char, char);
 void tl_val_delete(TL_VALUE);
 
+TL_VALUE builtin(TL_VALUE, char*);
 TL_VALUE builtin_op(TL_VALUE, char*);
+TL_VALUE builtin_list(TL_VALUE);
 TL_VALUE builtin_head(TL_VALUE);
 TL_VALUE builtin_tail(TL_VALUE);
+TL_VALUE builtin_eval(TL_VALUE);
+TL_VALUE builtin_join(TL_VALUE);
 
 int main(int argc, char** argv) {
 
@@ -224,7 +229,7 @@ TL_VALUE tl_val_eval_sexpr(TL_VALUE v) {
     return tl_val_error("S-expression does not start with a symbol");
   }
 
-  TL_VALUE result = builtin_op(v, f->sym);
+  TL_VALUE result = builtin(v, f->sym);
   tl_val_delete(f);
   return result;
 }
@@ -246,6 +251,18 @@ TL_VALUE tl_val_take(TL_VALUE v, int i) {
   TL_VALUE x = tl_val_pop(v, i);
   tl_val_delete(v);
   return x;
+}
+
+TL_VALUE builtin(TL_VALUE v, char* f) {
+  if (strcmp("list", f) == 0) return builtin_list(v);
+  if (strcmp("head", f) == 0) return builtin_head(v);
+  if (strcmp("tail", f) == 0) return builtin_tail(v);
+  if (strcmp("join", f) == 0) return builtin_join(v);
+  if (strcmp("eval", f) == 0) return builtin_eval(v);
+  if (strstr("+-*/", f) == 0) return builtin_op(v, f);
+
+  tl_val_delete(v);
+  return tl_val_error("Unknown function called!");
 }
 
 TL_VALUE builtin_op(TL_VALUE a, char* op) {
@@ -283,6 +300,11 @@ TL_VALUE builtin_op(TL_VALUE a, char* op) {
   return x;
 }
 
+TL_VALUE builtin_list(TL_VALUE v) {
+  v->type = TL_QEXPR;
+  return v;
+}
+
 TL_VALUE builtin_head(TL_VALUE v) {
   TL_ASSERT(v, (v->count==1), "Function 'head' passed too many arguments.");
   TL_ASSERT(v, (v->cell[0]->type != TL_QEXPR), "Function 'head' passed invalid types.");
@@ -296,9 +318,37 @@ TL_VALUE builtin_head(TL_VALUE v) {
 TL_VALUE builtin_tail(TL_VALUE v) {
   TL_ASSERT(v, (v->count == 1), "Function 'tail' passed too many arguments");
   TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'tail' passed invalid type");
-  TL_ASSERT(v, (v->cell[0]->count == 0), "Function 'tail' passed empty list");
+  TL_ASSERT(v, (v->cell[0]->count != 0), "Function 'tail' passed empty list");
 
   TL_VALUE x = tl_val_take(v, 0);
   tl_val_delete(tl_val_pop(x, 0));
   return x;
 }
+
+TL_VALUE builtin_eval(TL_VALUE v) {
+  TL_ASSERT(v, (v->count == 1), "Function 'eval' passed too many arguments");
+  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'eval' passed invalid types");
+
+  TL_VALUE x = tl_val_take(v, 0);
+  x->type = TL_SEXPR;
+  return tl_val_eval(x);
+}
+
+TL_VALUE builtin_join(TL_VALUE v) {
+  for(int i=0; i < v->count; i++) {
+    TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'join' passed invalid type");
+  }
+
+  TL_VALUE x = tl_val_pop(v, 0);
+  while(v->count > 0) x = tl_val_join(x, tl_val_pop(v, 0));
+  tl_val_delete(v);
+  return x;
+}
+
+TL_VALUE tl_val_join(TL_VALUE x, TL_VALUE y) {
+  while (y->count)
+    x = tl_val_add(x, tl_val_pop(y, 0));
+  tl_val_delete(y);
+  return x;
+}
+
