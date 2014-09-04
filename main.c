@@ -4,6 +4,8 @@
 
 #include "mpc.h"
 
+#define TL_ASSERT(args, cond, err) if(!(cond)) { tl_val_delete(args); return tl_val_error(err); }
+
 typedef struct tl_value {
   int type;
   long num;
@@ -29,6 +31,8 @@ void tl_val_print_expr(TL_VALUE, char, char);
 void tl_val_delete(TL_VALUE);
 
 TL_VALUE builtin_op(TL_VALUE, char*);
+TL_VALUE builtin_head(TL_VALUE);
+TL_VALUE builtin_tail(TL_VALUE);
 
 int main(int argc, char** argv) {
 
@@ -42,7 +46,7 @@ int main(int argc, char** argv) {
   mpca_lang(MPCA_LANG_DEFAULT,
     "                                             \
       number   : /-?[0-9]+/ ;                     \
-      symbol   : '+' | '-' | '*' | '/' ;          \
+      symbol   : \"list\" | \"head\" | \"tail\" | \"join\" | \"eval\" | '+' | '-' | '*' | '/' ; \
       sexpr    : '(' <expr>* ')' ;                \
       qexpr    : '{' <expr>* '}' ;                \
       expr     : <number> | <symbol> | <sexpr> | <qexpr>;  \
@@ -276,5 +280,25 @@ TL_VALUE builtin_op(TL_VALUE a, char* op) {
   }
 
   tl_val_delete(a);
+  return x;
+}
+
+TL_VALUE builtin_head(TL_VALUE v) {
+  TL_ASSERT(v, (v->count==1), "Function 'head' passed too many arguments.");
+  TL_ASSERT(v, (v->cell[0]->type != TL_QEXPR), "Function 'head' passed invalid types.");
+  TL_ASSERT(v, (v->cell[0]->count == 0), "Function 'head' passed empty list");
+
+  TL_VALUE x = tl_val_take(v, 0);
+  while(x->count > 1) tl_val_delete(tl_val_pop(x, 1));
+  return x;
+}
+
+TL_VALUE builtin_tail(TL_VALUE v) {
+  TL_ASSERT(v, (v->count == 1), "Function 'tail' passed too many arguments");
+  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'tail' passed invalid type");
+  TL_ASSERT(v, (v->cell[0]->count == 0), "Function 'tail' passed empty list");
+
+  TL_VALUE x = tl_val_take(v, 0);
+  tl_val_delete(tl_val_pop(x, 0));
   return x;
 }
