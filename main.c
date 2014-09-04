@@ -15,7 +15,7 @@ typedef struct tl_value {
   struct tl_value** cell;
 } TLVAL, *TL_VALUE;
 
-enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR };
+enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR };
 
 TL_VALUE tl_val_num(long);
 TL_VALUE tl_val_error(char*);
@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   mpc_parser_t* Number   = mpc_new("number");
   mpc_parser_t* Symbol   = mpc_new("symbol");
   mpc_parser_t* Sexpr    = mpc_new("sexpr");
+  mpc_parser_t* Qexpr    = mpc_new("qexpr");
   mpc_parser_t* Expr     = mpc_new("expr");
   mpc_parser_t* Tinylisp = mpc_new("tinylisp");
 
@@ -43,10 +44,11 @@ int main(int argc, char** argv) {
       number   : /-?[0-9]+/ ;                     \
       symbol   : '+' | '-' | '*' | '/' ;          \
       sexpr    : '(' <expr>* ')' ;                \
-      expr     : <number> | <symbol> | <sexpr> ;  \
+      qexpr    : '{' <expr>* '}' ;                \
+      expr     : <number> | <symbol> | <sexpr> | <qexpr>;  \
       tinylisp : /^/ <expr>* /$/ ;                \
     ",
-    Number, Symbol, Sexpr, Expr, Tinylisp);
+    Number, Symbol, Sexpr, Qexpr, Expr, Tinylisp);
 
   mpc_result_t r;
 
@@ -109,6 +111,14 @@ TL_VALUE tl_val_sexpr(void) {
   return v;
 }
 
+TL_VALUE tl_val_qexpr(void) {
+  TL_VALUE v = malloc(sizeof(TLVAL));
+  v->type = TL_QEXPR;
+  v->count = 0;
+  v->cell = NULL;
+  return v;
+}
+
 void tl_val_print(TL_VALUE v) {
   switch (v->type) {
     case TL_INTEGER:
@@ -126,6 +136,10 @@ void tl_val_print(TL_VALUE v) {
     case TL_SEXPR:
       tl_val_print_expr(v, '(', ')');
       break;
+
+    case TL_QEXPR:
+      tl_val_print_expr(v, '{', '}');
+      break;
   }
 }
 
@@ -135,6 +149,7 @@ void tl_val_delete(TL_VALUE v) {
     case TL_ERROR:   free(v->err); break;
     case TL_SYMBOL:  free(v->sym); break;
 
+    case TL_QEXPR:
     case TL_SEXPR:
       for(int i=0; i < v->count; i++) tl_val_delete(v->cell[i]);
       free(v->cell);
@@ -163,6 +178,7 @@ TL_VALUE tl_val_read(mpc_ast_t* t) {
   TL_VALUE x = NULL;
   if (strcmp(t->tag, ">") == 0) { x = tl_val_sexpr();  }
   if (strstr(t->tag, "sexpr")) { x = tl_val_sexpr(); }
+  if (strstr(t->tag, "qexpr")) { x = tl_val_qexpr(); }
 
   for(int i = 0; i<t->children_num; i++) {
     if (strcmp(t->children[i]->contents, "(") == 0) continue;
