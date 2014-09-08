@@ -6,7 +6,9 @@
 
 #define TL_ASSERT(args, cond, err) if(!(cond)) { tl_val_delete(args); return tl_val_error(err); }
 
-typedef struct val {
+typedef struct value Value;
+
+struct value {
   int type;
   long num;
 
@@ -14,30 +16,30 @@ typedef struct val {
   char* sym;
 
   int count;
-  struct val** cell;
-} TLVAL, *VAL;
+  Value** cell;
+};
 
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR };
 
-VAL tl_val_num(long);
-VAL tl_val_error(char*);
-VAL tl_val_read(mpc_ast_t*);
-VAL tl_val_pop(VAL, int);
-VAL tl_val_take(VAL, int);
-VAL tl_val_eval(VAL);
-VAL tl_val_join(VAL, VAL);
+Value* tl_val_num(long);
+Value* tl_val_error(char*);
+Value* tl_val_read(mpc_ast_t*);
+Value* tl_val_pop(Value*, int);
+Value* tl_val_take(Value*, int);
+Value* tl_val_eval(Value*);
+Value* tl_val_join(Value*, Value*);
 
-void tl_val_print(VAL);
-void tl_val_print_expr(VAL, char, char);
-void tl_val_delete(VAL);
+void tl_val_print(Value*);
+void tl_val_print_expr(Value*, char, char);
+void tl_val_delete(Value*);
 
-VAL builtin(VAL, char*);
-VAL builtin_op(VAL, char*);
-VAL builtin_list(VAL);
-VAL builtin_head(VAL);
-VAL builtin_tail(VAL);
-VAL builtin_eval(VAL);
-VAL builtin_join(VAL);
+Value* builtin(Value*, char*);
+Value* builtin_op(Value*, char*);
+Value* builtin_list(Value*);
+Value* builtin_head(Value*);
+Value* builtin_tail(Value*);
+Value* builtin_eval(Value*);
+Value* builtin_join(Value*);
 
 int main(int argc, char** argv) {
 
@@ -71,7 +73,7 @@ int main(int argc, char** argv) {
     if (strcmp(input, "exit") == 0) return 0;
 
     if (mpc_parse("<stdin>", input, Tinylisp, &r)) {
-      VAL x = tl_val_eval(tl_val_read(r.output));
+      Value* x = tl_val_eval(tl_val_read(r.output));
       tl_val_print(x);
       puts("");
       tl_val_delete(x);
@@ -90,46 +92,46 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-VAL tl_val_num(long x) {
-  VAL v = malloc(sizeof(TLVAL));
+Value* tl_val_num(long x) {
+  Value* v = malloc(sizeof(Value));
   v->type = TL_INTEGER;
   v->num = x;
   return v;
 }
 
-VAL tl_val_error(char* m) {
-  VAL v = malloc(sizeof(TLVAL));
+Value* tl_val_error(char* m) {
+  Value* v = malloc(sizeof(Value));
   v->type = TL_ERROR;
   v->err = malloc(strlen(m)+1);
   strcpy(v->err, m);
   return v;
 }
 
-VAL tl_val_symbol(char* s) {
-  VAL v = malloc(sizeof(TLVAL));
+Value* tl_val_symbol(char* s) {
+  Value* v = malloc(sizeof(Value));
   v->type = TL_SYMBOL;
   v->sym = malloc(strlen(s)+1);
   strcpy(v->sym, s);
   return v;
 }
 
-VAL tl_val_sexpr(void) {
-  VAL v = malloc(sizeof(TLVAL));
+Value* tl_val_sexpr(void) {
+  Value* v = malloc(sizeof(Value));
   v->type = TL_SEXPR;
   v->count = 0;
   v->cell = NULL;
   return v;
 }
 
-VAL tl_val_qexpr(void) {
-  VAL v = malloc(sizeof(TLVAL));
+Value* tl_val_qexpr(void) {
+  Value* v = malloc(sizeof(Value));
   v->type = TL_QEXPR;
   v->count = 0;
   v->cell = NULL;
   return v;
 }
 
-void tl_val_print(VAL v) {
+void tl_val_print(Value* v) {
   switch (v->type) {
     case TL_INTEGER:
       printf("%ld", v->num);
@@ -153,7 +155,7 @@ void tl_val_print(VAL v) {
   }
 }
 
-void tl_val_delete(VAL v) {
+void tl_val_delete(Value* v) {
   switch(v->type) {
     case TL_INTEGER: break;
     case TL_ERROR:   free(v->err); break;
@@ -168,24 +170,24 @@ void tl_val_delete(VAL v) {
   free(v);
 }
 
-VAL tl_val_add(VAL v, VAL x) {
+Value* tl_val_add(Value* v, Value* x) {
   v->count++;
-  v->cell = realloc(v->cell, sizeof(VAL) * v->count);
+  v->cell = realloc(v->cell, sizeof(Value*) * v->count);
   v->cell[v->count - 1] = x;
   return v;
 }
 
-VAL tl_val_read_integer(mpc_ast_t* t) {
+Value* tl_val_read_integer(mpc_ast_t* t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
   return errno != ERANGE ? tl_val_num(x) : tl_val_error("Invalid number");
 }
 
-VAL tl_val_read(mpc_ast_t* t) {
+Value* tl_val_read(mpc_ast_t* t) {
   if (strstr(t->tag, "number")) { return tl_val_read_integer(t); }
   if (strstr(t->tag, "symbol")) { return tl_val_symbol(t->contents); }
 
-  VAL x = NULL;
+  Value* x = NULL;
   if (strcmp(t->tag, ">") == 0) { x = tl_val_sexpr();  }
   if (strstr(t->tag, "sexpr")) { x = tl_val_sexpr(); }
   if (strstr(t->tag, "qexpr")) { x = tl_val_qexpr(); }
@@ -202,7 +204,7 @@ VAL tl_val_read(mpc_ast_t* t) {
   return x;
 }
 
-void tl_val_print_expr(VAL v, char open, char close) {
+void tl_val_print_expr(Value* v, char open, char close) {
   putchar(open);
   putchar(' ');
   for(int i=0; i<v->count; i++) {
@@ -213,7 +215,7 @@ void tl_val_print_expr(VAL v, char open, char close) {
   putchar(close);
 }
 
-VAL tl_val_eval_sexpr(VAL v) {
+Value* tl_val_eval_sexpr(Value* v) {
   for(int i=0; i < v->count; i++)
     v->cell[i] = tl_val_eval(v->cell[i]);
 
@@ -225,38 +227,38 @@ VAL tl_val_eval_sexpr(VAL v) {
 
   if (v->count == 1) return tl_val_take(v, 0);
 
-  VAL f = tl_val_pop(v, 0);
+  Value* f = tl_val_pop(v, 0);
   if (f->type != TL_SYMBOL) {
     tl_val_delete(f);
     tl_val_delete(v);
     return tl_val_error("S-expression does not start with a symbol");
   }
 
-  VAL result = builtin(v, f->sym);
+  Value* result = builtin(v, f->sym);
   tl_val_delete(f);
   return result;
 }
 
-VAL tl_val_eval(VAL v) {
+Value* tl_val_eval(Value* v) {
   if (v->type == TL_SEXPR) return tl_val_eval_sexpr(v);
   return v;
 }
 
-VAL tl_val_pop(VAL v, int i) {
-  VAL x = v->cell[i];
-  memmove(&v->cell[i], &v->cell[i+1], sizeof(VAL)*(v->count-i-1));
+Value* tl_val_pop(Value* v, int i) {
+  Value* x = v->cell[i];
+  memmove(&v->cell[i], &v->cell[i+1], sizeof(Value*)*(v->count-i-1));
   v->count--;
-  v->cell = realloc(v->cell, sizeof(VAL)*v->count);
+  v->cell = realloc(v->cell, sizeof(Value*)*v->count);
   return x;
 }
 
-VAL tl_val_take(VAL v, int i) {
-  VAL x = tl_val_pop(v, i);
+Value* tl_val_take(Value* v, int i) {
+  Value* x = tl_val_pop(v, i);
   tl_val_delete(v);
   return x;
 }
 
-VAL builtin(VAL v, char* f) {
+Value* builtin(Value* v, char* f) {
   if (strcmp("list", f) == 0) return builtin_list(v);
   if (strcmp("head", f) == 0) return builtin_head(v);
   if (strcmp("tail", f) == 0) return builtin_tail(v);
@@ -268,7 +270,7 @@ VAL builtin(VAL v, char* f) {
   return tl_val_error("Unknown function called!");
 }
 
-VAL builtin_op(VAL a, char* op) {
+Value* builtin_op(Value* a, char* op) {
   for (int i=0; i < a->count; i++) {
     if(a->cell[i]->type != TL_INTEGER) {
       tl_val_delete(a);
@@ -276,13 +278,13 @@ VAL builtin_op(VAL a, char* op) {
     }
   }
 
-  VAL x = tl_val_pop(a, 0);
+  Value* x = tl_val_pop(a, 0);
 
   if(strcmp(op, "-") && a->count == 0)
     x->num = -x->num;
 
   while (a->count > 0) {
-    VAL y = tl_val_pop(a, 0);
+    Value* y = tl_val_pop(a, 0);
 
     if(strcmp(op, "+") == 0) x->num += y->num;
     if(strcmp(op, "-") == 0) x->num -= y->num;
@@ -303,52 +305,52 @@ VAL builtin_op(VAL a, char* op) {
   return x;
 }
 
-VAL builtin_list(VAL v) {
+Value* builtin_list(Value* v) {
   v->type = TL_QEXPR;
   return v;
 }
 
-VAL builtin_head(VAL v) {
+Value* builtin_head(Value* v) {
   TL_ASSERT(v, (v->count == 1), "Function 'head' passed too many arguments.");
   TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'head' passed invalid types.");
   TL_ASSERT(v, (v->cell[0]->count != 0), "Function 'head' passed empty list");
 
-  VAL x = tl_val_take(v, 0);
+  Value* x = tl_val_take(v, 0);
   while(x->count > 1) tl_val_delete(tl_val_pop(x, 1));
   return x;
 }
 
-VAL builtin_tail(VAL v) {
+Value* builtin_tail(Value* v) {
   TL_ASSERT(v, (v->count == 1), "Function 'tail' passed too many arguments");
   TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'tail' passed invalid type");
   TL_ASSERT(v, (v->cell[0]->count != 0), "Function 'tail' passed empty list");
 
-  VAL x = tl_val_take(v, 0);
+  Value* x = tl_val_take(v, 0);
   tl_val_delete(tl_val_pop(x, 0));
   return x;
 }
 
-VAL builtin_eval(VAL v) {
+Value* builtin_eval(Value* v) {
   TL_ASSERT(v, (v->count == 1), "Function 'eval' passed too many arguments");
   TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'eval' passed invalid types");
 
-  VAL x = tl_val_take(v, 0);
+  Value* x = tl_val_take(v, 0);
   x->type = TL_SEXPR;
   return tl_val_eval(x);
 }
 
-VAL builtin_join(VAL v) {
+Value* builtin_join(Value* v) {
   for(int i=0; i < v->count; i++) {
     TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'join' passed invalid type");
   }
 
-  VAL x = tl_val_pop(v, 0);
+  Value* x = tl_val_pop(v, 0);
   while(v->count > 0) x = tl_val_join(x, tl_val_pop(v, 0));
   tl_val_delete(v);
   return x;
 }
 
-VAL tl_val_join(VAL x, VAL y) {
+Value* tl_val_join(Value* x, Value* y) {
   while (y->count)
     x = tl_val_add(x, tl_val_pop(y, 0));
   tl_val_delete(y);
