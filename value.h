@@ -5,16 +5,28 @@
 #include <stdlib.h>
 #include "mpc.h"
 
-typedef struct value {
+typedef struct value Value;
+typedef struct tl_env Env;
+
+typedef Value*(*tl_builtin)(Env*, Value*);
+
+struct value {
   int type;
   long num;
 
   char* err;
   char* sym;
+  tl_builtin fun;
 
   int count;
   struct value** cell;
-} Value;
+};
+
+struct tl_env {
+  int count;
+  char** syms;
+  Value** vals;
+};
 
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR };
 
