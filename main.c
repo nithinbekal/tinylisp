@@ -29,6 +29,9 @@ int main(int argc, char** argv) {
   puts("Tinylisp Version 0.0.1");
   puts("Press Ctrl+c to Exit\n");
 
+  Env* e = tl_env_new();
+  tl_env_add_builtins(e);
+
   while(1) {
     char* input = readline("tinylisp> ");
     add_history(input);
@@ -36,7 +39,7 @@ int main(int argc, char** argv) {
     if (strcmp(input, "exit") == 0) return 0;
 
     if (mpc_parse("<stdin>", input, Tinylisp, &r)) {
-      Value* x = tl_val_eval(tl_val_read(r.output));
+      Value* x = tl_val_eval(e, tl_val_read(r.output));
       tl_val_print(x);
       puts("");
       tl_val_delete(x);

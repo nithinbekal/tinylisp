@@ -131,9 +131,9 @@ void tl_val_print_expr(Value* v, char open, char close) {
   putchar(close);
 }
 
-Value* tl_val_eval_sexpr(Value* v) {
+Value* tl_val_eval_sexpr(Env* e, Value* v) {
   for(int i=0; i < v->count; i++)
-    v->cell[i] = tl_val_eval(v->cell[i]);
+    v->cell[i] = tl_val_eval(e, v->cell[i]);
 
   for(int i=0; i < v->count; i++)
     if (v->cell[i]->type == TL_ERROR)
@@ -144,19 +144,27 @@ Value* tl_val_eval_sexpr(Value* v) {
   if (v->count == 1) return tl_val_take(v, 0);
 
   Value* f = tl_val_pop(v, 0);
-  if (f->type != TL_SYMBOL) {
+  if (f->type != TL_FUNCTION) {
     tl_val_delete(f);
     tl_val_delete(v);
-    return tl_val_error("S-expression does not start with a symbol");
+    return tl_val_error("The first element is not a function");
   }
 
-  Value* result = builtin(v, f->sym);
+  Value* result = f->fun(e, v);
   tl_val_delete(f);
   return result;
 }
 
-Value* tl_val_eval(Value* v) {
-  if (v->type == TL_SEXPR) return tl_val_eval_sexpr(v);
+Value* tl_val_eval(Env* e, Value* v) {
+  if (v->type == TL_SYMBOL) {
+    Value* x = tl_env_get(e, v);
+    tl_val_delete(v);
+    return x;
+  }
+
+  if (v->type == TL_SEXPR)
+    return tl_val_eval_sexpr(e, v);
+
   return v;
 }
 
@@ -259,5 +267,26 @@ void tl_env_put(Env* e, Value* s, Value* v) {
   e->vals[e->count - 1] = tl_val_copy(v);
   e->syms[e->count - 1] = malloc(strlen(s->sym)+1);
   strcpy(e->syms[e->count - 1], s->sym);
+}
+
+void tl_env_add_builtin(Env* e, char* name, tl_builtin func) {
+  Value* s = tl_val_symbol(name);
+  Value* f = tl_val_fun(func);
+  tl_env_put(e, s, f);
+  tl_val_delete(s);
+  tl_val_delete(f);
+}
+
+void tl_env_add_builtins(Env* e) {
+  tl_env_add_builtin(e, "list", builtin_list);
+  tl_env_add_builtin(e, "head", builtin_head);
+  tl_env_add_builtin(e, "tail", builtin_tail);
+  tl_env_add_builtin(e, "eval", builtin_eval);
+  tl_env_add_builtin(e, "join", builtin_join);
+
+  tl_env_add_builtin(e, "+", builtin_add);
+  tl_env_add_builtin(e, "-", builtin_subtract);
+  tl_env_add_builtin(e, "*", builtin_multiply);
+  tl_env_add_builtin(e, "/", builtin_divide);
 }
 
