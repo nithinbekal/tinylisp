@@ -62,14 +62,20 @@ void tl_val_print(Value* v) {
     case TL_QEXPR:
       tl_val_print_expr(v, '{', '}');
       break;
+
+    case TL_FUNCTION:
+      printf("<function>");
+      break;
   }
 }
 
 void tl_val_delete(Value* v) {
   switch(v->type) {
-    case TL_INTEGER: break;
     case TL_ERROR:   free(v->err); break;
     case TL_SYMBOL:  free(v->sym); break;
+
+    case TL_INTEGER:  break;
+    case TL_FUNCTION: break;
 
     case TL_QEXPR:
     case TL_SEXPR:
@@ -173,5 +179,12 @@ Value* tl_val_join(Value* x, Value* y) {
     x = tl_val_add(x, tl_val_pop(y, 0));
   tl_val_delete(y);
   return x;
+}
+
+Value* tl_val_fun(tl_builtin func) {
+  Value* v = malloc(sizeof(Value));
+  v->type = TL_FUNCTION;
+  v->fun = func;
+  return v;
 }
 
