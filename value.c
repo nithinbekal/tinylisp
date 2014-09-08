@@ -217,3 +217,47 @@ Value* tl_val_copy(Value* v) {
   return x;
 }
 
+Env* tl_env_new(void) {
+  Env* e = malloc(sizeof(Env));
+  e->count = 0;
+  e->syms = NULL;
+  e->vals = NULL;
+  return e;
+}
+
+void tl_env_delete(Env* e) {
+  for(int i=0; i < e->count; i++) {
+    free(e->syms[i]);
+    free(e->vals[i]);
+  }
+  free(e->syms);
+  free(e->vals);
+  free(e);
+}
+
+Value* tl_env_get(Env* e, Value* v) {
+  for(int i=0; i < e->count; i++) {
+    if (strcmp(e->syms[i], v->sym) == 0)
+      return tl_val_copy(e->vals[i]);
+  }
+  return tl_val_error("Unbound symbol");
+}
+
+void tl_env_put(Env* e, Value* s, Value* v) {
+  for(int i=0; i < e->count; i++) {
+    if (strcmp(e->syms[i], s->sym) == 0) {
+      tl_val_delete(e->vals[i]);
+      e->vals[i] = tl_val_copy(v);
+      return;
+    }
+  }
+
+  e->count++;
+  e->vals = realloc(e->vals, sizeof(Value*) * e->count);
+  e->syms = realloc(e->syms, sizeof(char*) * e->count);
+
+  e->vals[e->count - 1] = tl_val_copy(v);
+  e->syms[e->count - 1] = malloc(strlen(s->sym)+1);
+  strcpy(e->syms[e->count - 1], s->sym);
+}
+

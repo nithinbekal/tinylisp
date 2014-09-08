@@ -44,4 +44,9 @@ void tl_val_print(Value*);
 void tl_val_print_expr(Value*, char, char);
 void tl_val_delete(Value*);
 
+Env*   tl_env_new(void);
+void   tl_env_delete(Env*);
+Value* tl_env_get(Env*, Value*);
+void   tl_env_put(Env*, Value*, Value*);
+
 #endif
