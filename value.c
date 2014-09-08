@@ -188,3 +188,32 @@ Value* tl_val_fun(tl_builtin func) {
   return v;
 }
 
+Value* tl_val_copy(Value* v) {
+  Value* x = malloc(sizeof(Value));
+  x->type = v->type;
+
+  switch(v->type) {
+    case TL_FUNCTION: x->fun = v->fun; break;
+    case TL_INTEGER:  x->num = v->num; break;
+
+    case TL_ERROR:
+      x->err = malloc(strlen(v->err)+1);
+      strcpy(x->err, v->err);
+      break;
+
+    case TL_SYMBOL:
+      x->sym = malloc(strlen(v->sym)+1);
+      strcpy(x->sym, v->sym);
+      break;
+
+    case TL_SEXPR:
+    case TL_QEXPR:
+      x->count = v->count;
+      x->cell = malloc(sizeof(Value*) * v->count);
+      for (int i=0; i < x->count; i++)
+        x->cell[i] = tl_val_copy(v->cell[i]);
+      break;
+  }
+  return x;
+}
+
