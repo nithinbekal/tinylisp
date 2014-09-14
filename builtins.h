@@ -4,7 +4,12 @@
 
 #include "value.h"
 
-#define TL_ASSERT(args, cond, err) if(!(cond)) { tl_val_delete(args); return tl_val_error(err); }
+#define TL_ASSERT(args, cond, fmt, ...) \
+  if (!(cond)) { \
+    Value* err = tl_val_error(fmt, ##__VA_ARGS__); \
+    tl_val_delete(args); \
+    return err; \
+  }
 
 Value* builtin_op(Env*, Value*, char*);
 Value* builtin_list(Env*, Value*);

@@ -9,11 +9,19 @@ Value* tl_val_num(long x) {
   return v;
 }
 
-Value* tl_val_error(char* m) {
+Value* tl_val_error(char* fmt, ...) {
   Value* v = malloc(sizeof(Value));
   v->type = TL_ERROR;
-  v->err = malloc(strlen(m)+1);
-  strcpy(v->err, m);
+
+  va_list va;
+  va_start(va, fmt);
+
+  v->err = malloc(512);
+  vsnprintf(v->err, 511, fmt, va);
+  v->err = realloc(v->err, strlen(v->err)+1);
+
+  va_end(va);
+
   return v;
 }
 

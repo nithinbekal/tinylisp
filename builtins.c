@@ -42,9 +42,15 @@ Value* builtin_list(Env* e, Value* v) {
 }
 
 Value* builtin_head(Env* e, Value* v) {
-  TL_ASSERT(v, (v->count == 1), "Function 'head' passed too many arguments.");
-  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Function 'head' passed invalid types.");
-  TL_ASSERT(v, (v->cell[0]->count != 0), "Function 'head' passed empty list");
+  TL_ASSERT(v, (v->count == 1),
+      "Function 'head' passed too many arguments. Got %i, Expected %i",
+      v->count, 1);
+
+  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR),
+      "Function 'head' passed invalid types.");
+
+  TL_ASSERT(v, (v->cell[0]->count != 0),
+      "Function 'head' passed empty list");
 
   Value* x = tl_val_take(v, 0);
   while(x->count > 1) tl_val_delete(tl_val_pop(x, 1));

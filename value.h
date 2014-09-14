@@ -31,7 +31,7 @@ struct tl_env {
 enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR, TL_FUNCTION };
 
 Value* tl_val_num(long);
-Value* tl_val_error(char*);
+Value* tl_val_error(char*, ...);
 Value* tl_val_read(mpc_ast_t*);
 Value* tl_val_pop(Value*, int);
 Value* tl_val_take(Value*, int);
