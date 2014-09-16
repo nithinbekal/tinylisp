@@ -16,7 +16,11 @@ struct value {
 
   char* err;
   char* sym;
-  tl_builtin fun;
+
+  tl_builtin builtin;
+  Env* env;
+  Value* formals;
+  Value* body;
 
   int count;
   struct value** cell;

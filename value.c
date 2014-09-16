@@ -158,7 +158,7 @@ Value* tl_val_eval_sexpr(Env* e, Value* v) {
     return tl_val_error("The first element is not a function");
   }
 
-  Value* result = f->fun(e, v);
+  Value* result = f->builtin(e, v);
   tl_val_delete(f);
   return result;
 }
@@ -200,7 +200,7 @@ Value* tl_val_join(Value* x, Value* y) {
 Value* tl_val_fun(tl_builtin func) {
   Value* v = malloc(sizeof(Value));
   v->type = TL_FUNCTION;
-  v->fun = func;
+  v->builtin = func;
   return v;
 }
 
@@ -209,7 +209,7 @@ Value* tl_val_copy(Value* v) {
   x->type = v->type;
 
   switch(v->type) {
-    case TL_FUNCTION: x->fun = v->fun; break;
+    case TL_FUNCTION: x->builtin = v->builtin; break;
     case TL_INTEGER:  x->num = v->num; break;
 
     case TL_ERROR:
