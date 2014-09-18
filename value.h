@@ -27,6 +27,7 @@ struct value {
 };
 
 struct tl_env {
+  Env* parent;
   int count;
   char** syms;
   Value** vals;
@@ -36,6 +37,8 @@ enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR, TL_FUNCTION };
 
 Value* tl_val_num(long);
 Value* tl_val_error(char*, ...);
+Value* tl_val_lambda(Value*, Value*);
+
 Value* tl_val_read(mpc_ast_t*);
 Value* tl_val_pop(Value*, int);
 Value* tl_val_take(Value*, int);
@@ -52,6 +55,7 @@ Env*   tl_env_new(void);
 void   tl_env_delete(Env*);
 Value* tl_env_get(Env*, Value*);
 void   tl_env_put(Env*, Value*, Value*);
+Env*   tl_env_copy(Env*);
 
 void   tl_env_add_builtin(Env*, char*, tl_builtin);
 void   tl_env_add_builtins(Env*);

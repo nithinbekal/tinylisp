@@ -87,6 +87,22 @@ Value* builtin_join(Env* e, Value* v) {
   return x;
 }
 
+Value* builtin_lambda(Env* e, Value* v) {
+  TL_ASSERT(v, (v->count == 2), "Expecting 2 arguments");
+  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Expecting Q-expr as lambda formal params");
+  TL_ASSERT(v, (v->cell[1]->type == TL_QEXPR), "Expecting Q-expr as lambda body");
+
+  for(int i=0; i < v->cell[0]->count; i++) {
+    TL_ASSERT(v, (v->cell[0]->cell[i]->type == TL_SYMBOL), "Lambda params must be symbols");
+  }
+
+  Value* formals = tl_val_pop(v, 0);
+  Value* body = tl_val_pop(v, 0);
+  tl_val_delete(v);
+
+  return tl_val_lambda(formals, body);
+}
+
 Value* builtin_add      (Env* e, Value* v) { return builtin_op(e, v, "+"); }
 Value* builtin_subtract (Env* e, Value* v) { return builtin_op(e, v, "-"); }
 Value* builtin_multiply (Env* e, Value* v) { return builtin_op(e, v, "*"); }

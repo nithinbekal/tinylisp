@@ -49,6 +49,19 @@ Value* tl_val_qexpr(void) {
   return v;
 }
 
+Value* tl_val_lambda(Value* formals, Value* body) {
+  Value* v = malloc(sizeof(Value));
+  v->type = TL_FUNCTION;
+
+  v->builtin = NULL;
+  v->env = tl_env_new();
+
+  v->formals = formals;
+  v->body = body;
+
+  return v;
+}
+
 void tl_val_print(Value* v) {
   switch (v->type) {
     case TL_INTEGER:
@@ -72,7 +85,15 @@ void tl_val_print(Value* v) {
       break;
 
     case TL_FUNCTION:
-      printf("<function>");
+      if (v->builtin) {
+        printf("<function>");
+      } else {
+        printf("(\\ ");
+        tl_val_print(v->formals);
+        putchar(' ');
+        tl_val_print(v->body);
+        putchar(')');
+      }
       break;
   }
 }
@@ -83,12 +104,19 @@ void tl_val_delete(Value* v) {
     case TL_SYMBOL:  free(v->sym); break;
 
     case TL_INTEGER:  break;
-    case TL_FUNCTION: break;
 
     case TL_QEXPR:
     case TL_SEXPR:
       for(int i=0; i < v->count; i++) tl_val_delete(v->cell[i]);
       free(v->cell);
+      break;
+
+    case TL_FUNCTION:
+      if (!v->builtin) {
+        tl_env_delete(v->env);
+        tl_val_delete(v->formals);
+        tl_val_delete(v->body);
+      }
       break;
   }
   free(v);
@@ -209,7 +237,6 @@ Value* tl_val_copy(Value* v) {
   x->type = v->type;
 
   switch(v->type) {
-    case TL_FUNCTION: x->builtin = v->builtin; break;
     case TL_INTEGER:  x->num = v->num; break;
 
     case TL_ERROR:
@@ -229,12 +256,24 @@ Value* tl_val_copy(Value* v) {
       for (int i=0; i < x->count; i++)
         x->cell[i] = tl_val_copy(v->cell[i]);
       break;
+
+    case TL_FUNCTION:
+      if (v->builtin) {
+        x->builtin = v->builtin; break;
+      } else {
+        x->builtin = NULL;
+        x->env = tl_env_copy(v->env);
+        x->formals = tl_val_copy(v->formals);
+        x->body = tl_val_copy(v->body);
+      }
+      break;
   }
   return x;
 }
 
 Env* tl_env_new(void) {
   Env* e = malloc(sizeof(Env));
+  e->parent = NULL;
   e->count = 0;
   e->syms = NULL;
   e->vals = NULL;
@@ -256,7 +295,12 @@ Value* tl_env_get(Env* e, Value* v) {
     if (strcmp(e->syms[i], v->sym) == 0)
       return tl_val_copy(e->vals[i]);
   }
-  return tl_val_error("Unbound symbol");
+
+  if (e->parent) {
+    return tl_env_get(e->parent, v);
+  } else {
+    return tl_val_error("Unbound symbol '%s'", v->sym);
+  }
 }
 
 void tl_env_put(Env* e, Value* s, Value* v) {
@@ -275,6 +319,20 @@ void tl_env_put(Env* e, Value* s, Value* v) {
   e->vals[e->count - 1] = tl_val_copy(v);
   e->syms[e->count - 1] = malloc(strlen(s->sym)+1);
   strcpy(e->syms[e->count - 1], s->sym);
+}
+
+Env* tl_env_copy(Env* e) {
+  Env* n = malloc(sizeof(Env));
+  n->parent = e->parent;
+  n->count = e->count;
+  n->syms = malloc(sizeof(char*) * n->count);
+  n->vals = malloc(sizeof(Env*) * n->count);
+  for(int i=0; i < n->count; i++) {
+    n->syms[i] = malloc(strlen(e->syms[i]) + 1);
+    strcpy(n->syms[i], e->syms[i]);
+    n->vals[i] = tl_val_copy(e->vals[i]);
+  }
+  return n;
 }
 
 void tl_env_add_builtin(Env* e, char* name, tl_builtin func) {
