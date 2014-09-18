@@ -356,3 +356,14 @@ void tl_env_add_builtins(Env* e) {
   tl_env_add_builtin(e, "/", builtin_divide);
 }
 
+char* tl_type_name(int t) {
+  switch(t) {
+    case TL_FUNCTION: return "Function";
+    case TL_INTEGER:  return "Number";
+    case TL_ERROR:    return "Error";
+    case TL_SYMBOL:   return "Symbol";
+    case TL_SEXPR:    return "S-expression";
+    case TL_QEXPR:    return "Q-expression";
+    default:          return "Unknown";
+  }
+}

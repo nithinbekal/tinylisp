@@ -60,4 +60,6 @@ Env*   tl_env_copy(Env*);
 void   tl_env_add_builtin(Env*, char*, tl_builtin);
 void   tl_env_add_builtins(Env*);
 
+char* tl_type_name(int);
+
 #endif

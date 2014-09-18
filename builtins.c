@@ -88,9 +88,9 @@ Value* builtin_join(Env* e, Value* v) {
 }
 
 Value* builtin_lambda(Env* e, Value* v) {
-  TL_ASSERT(v, (v->count == 2), "Expecting 2 arguments");
-  TL_ASSERT(v, (v->cell[0]->type == TL_QEXPR), "Expecting Q-expr as lambda formal params");
-  TL_ASSERT(v, (v->cell[1]->type == TL_QEXPR), "Expecting Q-expr as lambda body");
+  TL_ASSERT_NUM("\\", v, 2);
+  TL_ASSERT_TYPE("\\", v, 0, TL_QEXPR);
+  TL_ASSERT_TYPE("\\", v, 1, TL_QEXPR);
 
   for(int i=0; i < v->cell[0]->count; i++) {
     TL_ASSERT(v, (v->cell[0]->cell[i]->type == TL_SYMBOL), "Lambda params must be symbols");
