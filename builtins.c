@@ -126,6 +126,9 @@ Value* builtin_var(Env* e, Value* v, char* fn) {
   return tl_val_sexpr();
 }
 
+Value* builtin_def(Env* e, Value* v) { return builtin_var(e, v, "def"); }
+Value* builtin_put(Env* e, Value* v) { return builtin_var(e, v, "="); }
+
 Value* builtin_add      (Env* e, Value* v) { return builtin_op(e, v, "+"); }
 Value* builtin_subtract (Env* e, Value* v) { return builtin_op(e, v, "-"); }
 Value* builtin_multiply (Env* e, Value* v) { return builtin_op(e, v, "*"); }

@@ -29,6 +29,8 @@ Value* builtin_eval(Env*, Value*);
 Value* builtin_join(Env*, Value*);
 Value* builtin_lambda(Env*, Value*);
 Value* builtin_var(Env*, Value*, char*);
+Value* builtin_def(Env*, Value*);
+Value* builtin_put(Env*, Value*);
 
 Value* builtin_add      (Env*, Value*);
 Value* builtin_subtract (Env*, Value*);

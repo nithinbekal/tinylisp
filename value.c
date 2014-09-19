@@ -359,6 +359,9 @@ void tl_env_add_builtins(Env* e) {
   tl_env_add_builtin(e, "-", builtin_subtract);
   tl_env_add_builtin(e, "*", builtin_multiply);
   tl_env_add_builtin(e, "/", builtin_divide);
+
+  tl_env_add_builtin(e, "def", builtin_def);
+  tl_env_add_builtin(e, "=",   builtin_put);
 }
 
 char* tl_type_name(int t) {
