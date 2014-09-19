@@ -321,6 +321,11 @@ void tl_env_put(Env* e, Value* s, Value* v) {
   strcpy(e->syms[e->count - 1], s->sym);
 }
 
+void tl_env_def(Env* e, Value* k, Value* v) {
+  while (e->parent) e = e->parent;
+  tl_env_put(e, k, v);
+}
+
 Env* tl_env_copy(Env* e) {
   Env* n = malloc(sizeof(Env));
   n->parent = e->parent;

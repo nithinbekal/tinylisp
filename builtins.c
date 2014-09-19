@@ -103,6 +103,29 @@ Value* builtin_lambda(Env* e, Value* v) {
   return tl_val_lambda(formals, body);
 }
 
+Value* builtin_var(Env* e, Value* v, char* fn) {
+  TL_ASSERT_TYPE(fn, v, 0, TL_QEXPR);
+
+  Value* syms = v->cell[0];
+  for(int i=0; i < syms->count; i++) {
+    TL_ASSERT(v, (syms->cell[i]->type == TL_SYMBOL),
+        "Function '%s' cannot define non-symbol. Got: %s, expected %s.",
+        fn, tl_type_name(syms->cell[i]->type), tl_type_name(TL_SYMBOL));
+  }
+
+  TL_ASSERT(v, (syms->count == v->count-1),
+      "Function '%s' passed too many arguments for symbols. Got: %i, expected: %i",
+      fn, syms->count, v->count-1);
+
+  for(int i=0; i < syms->count; i++) {
+    if (strcmp(fn, "def") == 0) tl_env_def(e, syms->cell[i], v->cell[i+1]);
+    if (strcmp(fn, "=")   == 0) tl_env_put(e, syms->cell[i], v->cell[i+1]);
+  }
+
+  tl_val_delete(v);
+  return tl_val_sexpr();
+}
+
 Value* builtin_add      (Env* e, Value* v) { return builtin_op(e, v, "+"); }
 Value* builtin_subtract (Env* e, Value* v) { return builtin_op(e, v, "-"); }
 Value* builtin_multiply (Env* e, Value* v) { return builtin_op(e, v, "*"); }
