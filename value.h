@@ -40,6 +40,7 @@ Value* tl_val_error(char*, ...);
 Value* tl_val_lambda(Value*, Value*);
 Value* tl_val_sexpr();
 
+Value* tl_val_add(Value*, Value*);
 Value* tl_val_read(mpc_ast_t*);
 Value* tl_val_pop(Value*, int);
 Value* tl_val_take(Value*, int);
@@ -47,6 +48,7 @@ Value* tl_val_eval(Env*, Value*);
 Value* tl_val_join(Value*, Value*);
 Value* tl_val_fun(tl_builtin);
 Value* tl_val_copy(Value*);
+Value* tl_val_call(Env*, Value*, Value*);
 
 void tl_val_print(Value*);
 void tl_val_print_expr(Value*, char, char);

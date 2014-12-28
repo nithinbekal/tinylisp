@@ -62,6 +62,20 @@ Value* tl_val_lambda(Value* formals, Value* body) {
   return v;
 }
 
+Value* tl_val_call(Env* e, Value* fn, Value* args) {
+  if(fn->builtin) { return fn->builtin(e, args); }
+
+  for (int i=0; i < args->count; i++) {
+    tl_env_put(fn->env, fn->formals->cell[i], args->cell[i]);
+  }
+
+  tl_val_delete(args);
+  fn->env->parent = e;
+
+  return builtin_eval(fn->env,
+      tl_val_add(tl_val_sexpr(), tl_val_copy(fn->body)));
+}
+
 void tl_val_print(Value* v) {
   switch (v->type) {
     case TL_INTEGER:
