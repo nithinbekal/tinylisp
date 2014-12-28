@@ -45,4 +45,6 @@ Value* builtin_lt  (Env*, Value*);
 Value* builtin_le  (Env*, Value*);
 Value* builtin_ord (Env*, Value*, char*);
 
+Value* builtin_if  (Env*, Value*);
+
 #endif

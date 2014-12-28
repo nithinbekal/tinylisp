@@ -431,6 +431,15 @@ void tl_env_add_builtins(Env* e) {
   tl_env_add_builtin(e, "def", builtin_def);
   tl_env_add_builtin(e, "=",   builtin_put);
   tl_env_add_builtin(e, "\\",  builtin_lambda);
+
+  // Comparison
+  tl_env_add_builtin(e, "if", builtin_if);
+  tl_env_add_builtin(e, "==", builtin_eq);
+  tl_env_add_builtin(e, "!=", builtin_ne);
+  tl_env_add_builtin(e, ">",  builtin_gt);
+  tl_env_add_builtin(e, "<",  builtin_lt);
+  tl_env_add_builtin(e, ">=", builtin_ge);
+  tl_env_add_builtin(e, "<=", builtin_le);
 }
 
 char* tl_type_name(int t) {

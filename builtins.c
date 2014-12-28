@@ -207,3 +207,23 @@ Value* builtin_le(Env* e, Value* v) { return builtin_ord(e, v, "<="); }
 
 Value* builtin_eq(Env* e, Value* a) { return builtin_cmp(e, a, "=="); }
 Value* builtin_ne(Env* e, Value* a) { return builtin_cmp(e, a, "!="); }
+
+Value* builtin_if(Env* e, Value* a) {
+  TL_ASSERT_NUM("if", a, 3);
+  TL_ASSERT_TYPE("if", a, 0, TL_INTEGER);
+  TL_ASSERT_TYPE("if", a, 1, TL_QEXPR);
+  TL_ASSERT_TYPE("if", a, 2, TL_QEXPR);
+
+  Value* x;
+  a->cell[1]->type = TL_SEXPR;
+  a->cell[2]->type = TL_SEXPR;
+
+  if (a->cell[0]->num) {
+    x = tl_val_eval(e, tl_val_pop(a, 1));
+  } else {
+    x = tl_val_eval(e, tl_val_pop(a, 2));
+  }
+  
+  tl_val_delete(a);
+  return x;
+}
