@@ -69,7 +69,7 @@ Value* tl_val_call(Env* e, Value* fn, Value* args) {
   int total = fn->formals->count;
 
   while (args->count) {
-    if (fn->formals->count) {
+    if (fn->formals->count == 0) {
       tl_val_delete(args);
       return tl_val_error(
           "Function passed too many arguments. "
@@ -215,12 +215,16 @@ Value* tl_val_eval_sexpr(Env* e, Value* v) {
 
   Value* f = tl_val_pop(v, 0);
   if (f->type != TL_FUNCTION) {
+    Value* err = tl_val_error(
+        "S-expression starts with incorrect type. "
+        "Got %s, expected %s.",
+        tl_type_name(f->type), tl_type_name(TL_FUNCTION));
     tl_val_delete(f);
     tl_val_delete(v);
-    return tl_val_error("The first element is not a function");
+    return err;
   }
 
-  Value* result = f->builtin(e, v);
+  Value* result = tl_val_call(e, f, v);
   tl_val_delete(f);
   return result;
 }
@@ -396,6 +400,7 @@ void tl_env_add_builtins(Env* e) {
 
   tl_env_add_builtin(e, "def", builtin_def);
   tl_env_add_builtin(e, "=",   builtin_put);
+  tl_env_add_builtin(e, "\\",  builtin_lambda);
 }
 
 char* tl_type_name(int t) {
