@@ -134,11 +134,6 @@ Value* builtin_subtract (Env* e, Value* v) { return builtin_op(e, v, "-"); }
 Value* builtin_multiply (Env* e, Value* v) { return builtin_op(e, v, "*"); }
 Value* builtin_divide   (Env* e, Value* v) { return builtin_op(e, v, "/"); }
 
-Value* builtin_gt(Env* e, Value* v) { return builtin_ord(e, v, ">" ); }
-Value* builtin_ge(Env* e, Value* v) { return builtin_ord(e, v, ">="); }
-Value* builtin_lt(Env* e, Value* v) { return builtin_ord(e, v, "<" ); }
-Value* builtin_le(Env* e, Value* v) { return builtin_ord(e, v, "<="); }
-
 Value* builtin_ord(Env* e, Value* a, char* op) {
   TL_ASSERT_NUM(op, a, 2);
   TL_ASSERT_TYPE(op, a, 0, TL_INTEGER);
@@ -162,3 +157,53 @@ Value* builtin_ord(Env* e, Value* a, char* op) {
   return tl_val_num(r);
 }
 
+int tl_val_eq(Value* x, Value* y) {
+  if (x->type != y->type) { return 0; }
+
+  switch (x->type) {
+    case TL_INTEGER: return (x->num == y->num);
+
+    case TL_ERROR:  return (strcmp(x->err, y->err) == 0);
+    case TL_SYMBOL: return (strcmp(x->sym, y->sym) == 0);
+
+    case TL_FUNCTION:
+      if (x->builtin || y->builtin) {
+        return x->builtin == y->builtin;
+      } else {
+        return tl_val_eq(x->formals, y->formals) 
+          && tl_val_eq(x->body, y->body);
+      }
+
+    case TL_QEXPR:
+    case TL_SEXPR:
+      if (x->count != y->count) { return 0; }
+      for (int i = 0; i < x->count; i++) {
+        if (!tl_val_eq(x->cell[i], y->cell[i])) { return 0; }
+      }
+      return 1;
+    break;
+  }
+  return 0;
+}
+
+Value* builtin_cmp(Env* e, Value* a, char* op) {
+  TL_ASSERT_NUM(op, a, 2);
+
+  int r;
+  if (strcmp(op, "==") == 0) {
+    r = tl_val_eq(a->cell[0], a->cell[1]);
+  }
+  if (strcmp(op, "!=") == 0) {
+    r = !tl_val_eq(a->cell[0], a->cell[1]);
+  }
+  tl_val_delete(a);
+  return tl_val_num(r);
+}
+
+Value* builtin_gt(Env* e, Value* v) { return builtin_ord(e, v, ">" ); }
+Value* builtin_ge(Env* e, Value* v) { return builtin_ord(e, v, ">="); }
+Value* builtin_lt(Env* e, Value* v) { return builtin_ord(e, v, "<" ); }
+Value* builtin_le(Env* e, Value* v) { return builtin_ord(e, v, "<="); }
+
+Value* builtin_eq(Env* e, Value* a) { return builtin_cmp(e, a, "=="); }
+Value* builtin_ne(Env* e, Value* a) { return builtin_cmp(e, a, "!="); }

@@ -37,6 +37,8 @@ Value* builtin_subtract (Env*, Value*);
 Value* builtin_multiply (Env*, Value*);
 Value* builtin_divide   (Env*, Value*);
 
+Value* builtin_eq  (Env*, Value*);
+Value* builtin_ne  (Env*, Value*);
 Value* builtin_gt  (Env*, Value*);
 Value* builtin_ge  (Env*, Value*);
 Value* builtin_lt  (Env*, Value*);
