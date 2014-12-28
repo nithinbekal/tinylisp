@@ -77,10 +77,40 @@ Value* tl_val_call(Env* e, Value* fn, Value* args) {
     }
 
     Value* sym = tl_val_pop(fn->formals, 0);
+
+    if (strcmp(sym->sym, "&") == 0) {
+      if (fn->formals->count != 1) {
+        tl_val_delete(args);
+        return tl_val_error("Function format invalid."
+            "Symbol '&' not followed by single symbol");
+      }
+
+      Value* symbols = tl_val_pop(fn->formals, 0);
+      tl_env_put(fn->env, symbols, builtin_list(e, args));
+      tl_val_delete(sym);
+      tl_val_delete(symbols);
+      break;
+    }
+
     Value* val = tl_val_pop(args, 0);
     tl_env_put(fn->env, sym, val);
     tl_val_delete(sym);
     tl_val_delete(val);
+  }
+
+  if (fn->formals->count > 0 && strcmp(fn->formals->cell[0]->sym, "&") == 0) {
+    if (fn->formals->count != 2) {
+      return tl_val_error("Function format invalid."
+          "Symbol '&' not followed by single symbol");
+    }
+
+    tl_val_delete(tl_val_pop(fn->formals, 0));
+    Value* symbol = tl_val_pop(fn->formals, 0);
+    Value* value  = tl_val_qexpr();
+
+    tl_env_put(e, symbol, value);
+    tl_val_delete(symbol);
+    tl_val_delete(value);
   }
 
   tl_val_delete(args);
