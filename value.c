@@ -65,15 +65,35 @@ Value* tl_val_lambda(Value* formals, Value* body) {
 Value* tl_val_call(Env* e, Value* fn, Value* args) {
   if(fn->builtin) { return fn->builtin(e, args); }
 
-  for (int i=0; i < args->count; i++) {
-    tl_env_put(fn->env, fn->formals->cell[i], args->cell[i]);
+  int given = args->count;
+  int total = fn->formals->count;
+
+  while (args->count) {
+    if (fn->formals->count) {
+      tl_val_delete(args);
+      return tl_val_error(
+          "Function passed too many arguments. "
+          "Got %i, expected %i.", given, total);
+    }
+
+    Value* sym = tl_val_pop(fn->formals, 0);
+    Value* val = tl_val_pop(args, 0);
+    tl_env_put(fn->env, sym, val);
+    tl_val_delete(sym);
+    tl_val_delete(val);
   }
 
   tl_val_delete(args);
-  fn->env->parent = e;
 
-  return builtin_eval(fn->env,
-      tl_val_add(tl_val_sexpr(), tl_val_copy(fn->body)));
+  if (fn->formals->count == 0) {
+    // Eval and return if all formals have been bound
+    fn->env->parent = e;
+    return builtin_eval(fn->env,
+        tl_val_add(tl_val_sexpr(), tl_val_copy(fn->body)));
+  } else {
+    // Partially evaluated function
+    return tl_val_copy(fn);
+  }
 }
 
 void tl_val_print(Value* v) {
