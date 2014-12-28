@@ -134,3 +134,31 @@ Value* builtin_subtract (Env* e, Value* v) { return builtin_op(e, v, "-"); }
 Value* builtin_multiply (Env* e, Value* v) { return builtin_op(e, v, "*"); }
 Value* builtin_divide   (Env* e, Value* v) { return builtin_op(e, v, "/"); }
 
+Value* builtin_gt(Env* e, Value* v) { return builtin_ord(e, v, ">" ); }
+Value* builtin_ge(Env* e, Value* v) { return builtin_ord(e, v, ">="); }
+Value* builtin_lt(Env* e, Value* v) { return builtin_ord(e, v, "<" ); }
+Value* builtin_le(Env* e, Value* v) { return builtin_ord(e, v, "<="); }
+
+Value* builtin_ord(Env* e, Value* a, char* op) {
+  TL_ASSERT_NUM(op, a, 2);
+  TL_ASSERT_TYPE(op, a, 0, TL_INTEGER);
+  TL_ASSERT_TYPE(op, a, 1, TL_INTEGER);
+
+  int r;
+
+  if (strcmp(op, ">") == 0) {
+    r = (a->cell[0]->num > a->cell[1]->num);
+  }
+  if (strcmp(op, ">=") == 0) {
+    r = (a->cell[0]->num >= a->cell[1]->num);
+  }
+  if (strcmp(op, "<") == 0) {
+    r = (a->cell[0]->num < a->cell[1]->num);
+  }
+  if (strcmp(op, "<=") == 0) {
+    r = (a->cell[0]->num <= a->cell[1]->num);
+  }
+  tl_val_delete(a);
+  return tl_val_num(r);
+}
+
