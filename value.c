@@ -246,6 +246,7 @@ Value* tl_val_read(mpc_ast_t* t) {
     if (strcmp(t->children[i]->contents, "{") == 0) continue;
     if (strcmp(t->children[i]->contents, "}") == 0) continue;
     if (strcmp(t->children[i]->tag,  "regex") == 0) continue;
+    if (strstr(t->children[i]->tag, "comment")) { continue; }
 
     x = tl_val_add(x, tl_val_read(t->children[i]));
   }
