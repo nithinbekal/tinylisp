@@ -16,6 +16,7 @@ struct value {
 
   char* err;
   char* sym;
+  char* str;
 
   tl_builtin builtin;
   Env* env;
@@ -33,9 +34,10 @@ struct tl_env {
   Value** vals;
 };
 
-enum { TL_INTEGER, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR, TL_FUNCTION };
+enum { TL_INTEGER, TL_STRING, TL_ERROR, TL_SYMBOL, TL_SEXPR, TL_QEXPR, TL_FUNCTION };
 
 Value* tl_val_num(long);
+Value* tl_val_string(char*);
 Value* tl_val_error(char*, ...);
 Value* tl_val_lambda(Value*, Value*);
 Value* tl_val_sexpr();

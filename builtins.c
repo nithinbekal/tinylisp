@@ -165,6 +165,7 @@ int tl_val_eq(Value* x, Value* y) {
 
     case TL_ERROR:  return (strcmp(x->err, y->err) == 0);
     case TL_SYMBOL: return (strcmp(x->sym, y->sym) == 0);
+    case TL_STRING: return (strcmp(x->str, y->str) == 0);
 
     case TL_FUNCTION:
       if (x->builtin || y->builtin) {

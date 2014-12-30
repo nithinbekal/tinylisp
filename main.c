@@ -8,21 +8,25 @@ int main(int argc, char** argv) {
 
   mpc_parser_t* Number   = mpc_new("number");
   mpc_parser_t* Symbol   = mpc_new("symbol");
+  mpc_parser_t* String   = mpc_new("string");
   mpc_parser_t* Sexpr    = mpc_new("sexpr");
   mpc_parser_t* Qexpr    = mpc_new("qexpr");
   mpc_parser_t* Expr     = mpc_new("expr");
   mpc_parser_t* Tinylisp = mpc_new("tinylisp");
 
+  printf("1");
+
   mpca_lang(MPCA_LANG_DEFAULT,
     " \
       number   : /-?[0-9]+/ ; \
       symbol   : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ; \
+      string   : /\"(\\\\.|[^\"])*\"/ ; \
       sexpr    : '(' <expr>* ')' ; \
       qexpr    : '{' <expr>* '}' ; \
-      expr     : <number> | <symbol> | <sexpr> | <qexpr>; \
+      expr     : <number> | <symbol> | <string> | <sexpr> | <qexpr>; \
       tinylisp : /^/ <expr>* /$/ ; \
     ",
-    Number, Symbol, Sexpr, Qexpr, Expr, Tinylisp);
+    Number, Symbol, String, Sexpr, Qexpr, Expr, Tinylisp);
 
   mpc_result_t r;
 

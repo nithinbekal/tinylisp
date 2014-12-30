@@ -9,6 +9,14 @@ Value* tl_val_num(long x) {
   return v;
 }
 
+Value* tl_val_string(char* s) {
+  Value* v = malloc(sizeof(Value));
+  v->type = TL_STRING;
+  v->str = malloc(strlen(s) + 1);
+  strcpy(v->str, s);
+  return v;
+}
+
 Value* tl_val_error(char* fmt, ...) {
   Value* v = malloc(sizeof(Value));
   v->type = TL_ERROR;
@@ -126,6 +134,14 @@ Value* tl_val_call(Env* e, Value* fn, Value* args) {
   }
 }
 
+void tl_val_print_string(Value* v) {
+  char* escaped = malloc(strlen(v->str) + 1);
+  strcpy(escaped, v->str);
+  escaped = mpcf_escape(escaped);
+  printf("\"%s\"", escaped);  
+  free(escaped);
+}
+
 void tl_val_print(Value* v) {
   switch (v->type) {
     case TL_INTEGER:
@@ -138,6 +154,10 @@ void tl_val_print(Value* v) {
 
     case TL_SYMBOL:
       printf("%s", v->sym);
+      break;
+
+    case TL_STRING:
+      tl_val_print_string(v);
       break;
 
     case TL_SEXPR:
@@ -166,6 +186,7 @@ void tl_val_delete(Value* v) {
   switch(v->type) {
     case TL_ERROR:   free(v->err); break;
     case TL_SYMBOL:  free(v->sym); break;
+    case TL_STRING:  free(v->str); break;
 
     case TL_INTEGER:  break;
 
@@ -199,6 +220,16 @@ Value* tl_val_read_integer(mpc_ast_t* t) {
   return errno != ERANGE ? tl_val_num(x) : tl_val_error("Invalid number");
 }
 
+Value* tl_val_read_str(mpc_ast_t* t) {
+  t->contents[strlen(t->contents)-1] = '\0';
+  char* unescaped = malloc(strlen(t->contents+1)+1);
+  strcpy(unescaped, t->contents+1);
+  unescaped = mpcf_unescape(unescaped);
+  Value* str = tl_val_string(unescaped);
+  free(unescaped);
+  return str;
+}
+
 Value* tl_val_read(mpc_ast_t* t) {
   if (strstr(t->tag, "number")) { return tl_val_read_integer(t); }
   if (strstr(t->tag, "symbol")) { return tl_val_symbol(t->contents); }
@@ -207,6 +238,7 @@ Value* tl_val_read(mpc_ast_t* t) {
   if (strcmp(t->tag, ">") == 0) { x = tl_val_sexpr();  }
   if (strstr(t->tag, "sexpr")) { x = tl_val_sexpr(); }
   if (strstr(t->tag, "qexpr")) { x = tl_val_qexpr(); }
+  if (strstr(t->tag, "string")) { return tl_val_read_str(t); }
 
   for(int i = 0; i<t->children_num; i++) {
     if (strcmp(t->children[i]->contents, "(") == 0) continue;
@@ -315,6 +347,11 @@ Value* tl_val_copy(Value* v) {
     case TL_SYMBOL:
       x->sym = malloc(strlen(v->sym)+1);
       strcpy(x->sym, v->sym);
+      break;
+
+    case TL_STRING:
+      x->str = malloc(strlen(v->str)+1);
+      strcpy(x->str, v->str);
       break;
 
     case TL_SEXPR:
