@@ -18,13 +18,14 @@ int main(int argc, char** argv) {
 
   mpca_lang(MPCA_LANG_DEFAULT,
     " \
-      number   : /-?[0-9]+/ ; \
-      symbol   : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ; \
-      string   : /\"(\\\\.|[^\"])*\"/ ; \
-      sexpr    : '(' <expr>* ')' ; \
-      qexpr    : '{' <expr>* '}' ; \
-      expr     : <number> | <symbol> | <string> | <sexpr> | <qexpr>; \
-      tinylisp : /^/ <expr>* /$/ ; \
+      number   : /-?[0-9]+/ ;                               \
+      symbol   : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;         \
+      string   : /\"(\\\\.|[^\"])*\"/ ;                     \
+      sexpr    : '(' <expr>* ')' ;                          \
+      qexpr    : '{' <expr>* '}' ;                          \
+      expr     : <number> | <symbol> | <string>             \
+               | <sexpr> | <qexpr> ;                        \
+      tinylisp : /^/ <expr>* /$/ ;                          \
     ",
     Number, Symbol, String, Sexpr, Qexpr, Expr, Tinylisp);
 
